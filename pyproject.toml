@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "survey"
+version = "0.1.0"
+description = "Program to compare GPT's and human capacity to evaluate mental symptoms"
+authors = ["Anselm Jeong"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+streamlit = "^1.25.0"
+streamlit-authenticator = "^0.2.2"
+streamlit-scrollable-textbox = "^0.0.3"
+google-cloud-firestore = "^2.11.1"
+pandas = "^2.0.3"
+openpyxl = "^3.1.2"
+matplotlib = "^3.7.2"
+watchdog = "^3.0.0"
+streamlit-extras = "^0.3.4"
+streamlit-antd-components = "^0.2.2"
+
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.25.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
