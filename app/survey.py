@@ -36,6 +36,10 @@ st.set_page_config(
 
 ########### Session Variables  ####################
 
+
+sss['load_selection'] = sss['load_selection']
+sss['tab_selection'] = sss['tab_selection']
+
 if 'authenticated' not in sss:
     sss['authenticated'] = None
 if 'df' not in sss:
@@ -68,6 +72,11 @@ if 'current_ID' not in sss:
 #     sss['human_current_index'] = 0
 # if 'human_current_ID' not in sss:
 #     sss['human_current_ID'] = None
+
+if 'tab_selection' not in sss:
+    sss['tab_selection'] = '초기평가'
+if 'load_selection' not in sss:
+    sss['load_selection'] = '이전 재검토 자료'
 
 if 'symptoms' not in sss:
     sss['symptoms'] = None
@@ -354,12 +363,12 @@ if sss['ready'] and sss['authenticated']:
     
     _,col_tab,_ = st.columns([0.2,0.6,0.2])
     with col_tab:
-        tab_selection=sac.segmented([
+        sss['tab_selection']=sac.segmented([
             sac.SegmentedItem(label='초기평가'),
             sac.SegmentedItem(label='재검토'),
         ], grow=True)
     
-    if tab_selection == "초기평가":
+    if sss['tab_selection'] == "초기평가":
         #### ========= initial evaluation ========== ###
 
         eval_col1, _, eval_col2 = st.columns([0.63, 0.02, 0.35])
@@ -408,7 +417,7 @@ if sss['ready'] and sss['authenticated']:
                                         id=f"initial-{symptom}")
                 # st.write(initial_survey.data)
             
-    if tab_selection == "재검토":
+    if sss['tab_selection'] == "재검토":
         st.subheader(f":blue[{case['case_description']['sex']}/{case['case_description']['age']}]")
         scrollableTextbox(case['case_description']['description'], height=400, border=False)
 
@@ -421,15 +430,15 @@ if sss['ready'] and sss['authenticated']:
                 category = sss['categories'][human_page.current]
                 
                 st.warning("재검토: GPT 결과를 참조하여 수정할 수 있습니다.")
-                selection = sac.buttons([
+                sss['load_selection'] = sac.buttons([
                     sac.ButtonsItem(label='이전 재검토 자료', icon='box-fill'),
                     sac.ButtonsItem(label='초기평가 자료', icon='rewind-circle-fill')
                 ], format_func='title', align='start', size='small',
                 label='__어떤 자료를 불러들일까요?__', position='left')
                 
-                if selection == '이전 재검토 자료':
+                if sss['load_selection'] == '이전 재검토 자료':
                     fill_survey('human', 'human')
-                elif selection == '초기평가 자료':
+                elif sss['load_selection'] == '초기평가 자료':
                     fill_survey('initial', 'human')
 
                 st.info(f"__{human_page.current+1}/{len(sss['categories'])}: {category}__")
