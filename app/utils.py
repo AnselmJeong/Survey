@@ -5,16 +5,13 @@ import pandas as pd
 import os, yaml, json
 from collections.abc import Iterable
 import streamlit_authenticator as stauth
-
+import streamlit as st
 
 from yaml.loader import SafeLoader
 
+fb_credentials = st.secrets["firebase"]['firebase_settings']
 
-db = firestore.Client.from_service_account_json("./.streamlit/firebase2.json")
-
-
-
-
+db=firestore.Client.from_service_account_info(fb_credentials)    
 
 def get_doc_ref(username:str, ID:str, callback=None) -> google.cloud.firestore_v1.document.DocumentReference:
     """
