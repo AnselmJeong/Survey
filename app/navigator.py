@@ -3,6 +3,7 @@ import streamlit as st
 
 
 def generate_navigator(sss, callback=None):
+    answer = 0
     def _next():
         bound = len(sss['IDs'])-1
         sss['current_index'] = min(sss['current_index'] + 1, bound)

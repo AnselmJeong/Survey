@@ -73,10 +73,16 @@ if 'current_ID' not in sss:
 # if 'human_current_ID' not in sss:
 #     sss['human_current_ID'] = None
 
-if 'tab_selection' not in sss:
-    sss['tab_selection'] = '초기평가'
+if 'user_tab_selection' not in sss:
+    sss['user_tab_selection'] = None
+    
+# if 'tab_index' not in sss:
+#     sss['tab_index'] = None
 if 'load_selection' not in sss:
-    sss['load_selection'] = '이전 재검토 자료'
+    sss['load_selection'] = 0
+
+if 'ID_changed' not in sss:
+    sss['ID_changed'] = False
 
 if 'symptoms' not in sss:
     sss['symptoms'] = None
@@ -138,6 +144,8 @@ response_options = [
 #     sss[f'{which}_current_index'] = 0
 #     index_to_ID(which)
 
+
+
 def copy_survey_data(source, target):
     temp2 = {}
     for k, v in sss[f'{source}_survey_data'].items():
@@ -178,7 +186,7 @@ def on_ID_change():
     indended to used as a callback function
     If current patient ID is changed, then...
     """
-    print("on_ID_change")
+    
     # current_ID를 current_index에 맞추어 갱신
     sss['current_ID'] = sss['IDs'][sss['current_index']]
     # 먼저 바뀐 ID에 맞추어 sss['doc_ref']를 갱신하고
@@ -192,6 +200,8 @@ def on_ID_change():
     rewind_pages()
     # 모두 준비되었음을 알린다.
     sss['initialized'] = True
+    sss['ID_changed'] = True
+
 
 
 
@@ -282,21 +292,18 @@ def fetch_db():
     with st.spinner(f"Loading data..."):
         print("Enter fetch db")
         
+        if 'df' in sss:
+            sss['gpt_survey_data'] = df_to_gpt_data(sss['df'], sss['current_ID'])
+        
         doc = sss['doc_ref'].get()
-
         
         if doc.exists:
             sss['initial_survey_data'] = {k: v for k, v in doc.to_dict().items() if f"initial-" in k}
             sss['human_survey_data'] = {k: v for k, v in doc.to_dict().items() if "human-" in k}
-            
             sss['evaluated'] = doc.to_dict().get('evaluated', False)
             sss['reviewed'] = doc.to_dict().get('reviewed', False)
-            
-            if 'df' in sss:
-                sss['gpt_survey_data'] = df_to_gpt_data(sss['df'], sss['current_ID'])
         else:
             sss['initial_survey_data'] = {}
-            sss['gpt_survey_data'] = {}
             sss['human_survey_data'] = {}
             sss['evaluated'] = False
             sss['reviewed'] = False
@@ -352,9 +359,10 @@ if sss['ready'] and sss['authenticated']:
     _,col_nav,col_info = st.columns([0.1,0.6,0.3])
     with col_nav:
         generate_navigator(sss, callback=on_ID_change)
+
     with col_info:
         evaluated, reviewed = sss['evaluated'], sss['reviewed']    
-        st.markdown(f"초기평가: {'✅' if evaluated else '⌛'}, 재검토: {'✅' if reviewed else '💢'}")
+        st.markdown(f"초기평가: {'⭕️' if evaluated else '❌'}, 재검토: {'⭕️' if reviewed else '❌'}")
     
         
     sac.divider(icon='magic', align='center')
@@ -366,12 +374,24 @@ if sss['ready'] and sss['authenticated']:
     
     _,col_tab,_ = st.columns([0.2,0.6,0.2])
     with col_tab:
-        sss['tab_selection']=sac.segmented([
-            sac.SegmentedItem(label='초기평가'),
-            sac.SegmentedItem(label='재검토'),
-        ], grow=True)
+        if sss['ID_changed']:
+            sss['user_tab_selection']=sac.segmented([
+                sac.SegmentedItem(label='초기평가'),
+                sac.SegmentedItem(label='재검토'),
+            ], grow=True, return_index=True,
+            index=0)
+            sss['ID_changed'] = False
+            st.rerun()
+        else:
+            sss['user_tab_selection']=sac.segmented([
+                sac.SegmentedItem(label='초기평가'),
+                sac.SegmentedItem(label='재검토'),
+            ], grow=True, return_index=True)
     
-    if sss['tab_selection'] == "초기평가":
+        # st.write('sss', sss['user_tab_selection'])
+
+        
+    if sss['user_tab_selection'] == 0:
         #### ========= initial evaluation ========== ###
 
         eval_col1, _, eval_col2 = st.columns([0.63, 0.02, 0.35])
@@ -420,7 +440,7 @@ if sss['ready'] and sss['authenticated']:
                                         id=f"initial-{symptom}")
                 # st.write(initial_survey.data)
             
-    if sss['tab_selection'] == "재검토":
+    if sss['user_tab_selection'] == 1:
         st.subheader(f":blue[{case['case_description']['sex']}/{case['case_description']['age']}]")
         scrollableTextbox(case['case_description']['description'], height=400, border=False)
 
@@ -433,22 +453,22 @@ if sss['ready'] and sss['authenticated']:
                 category = sss['categories'][human_page.current]
                 
                 st.warning("재검토: GPT 결과를 참조하여 수정할 수 있습니다.")
-                st.write(sss['human_survey_data'])
+                # st.write(sss['human_survey_data'])
 
                 previous_selection = sss['load_selection']
                 sss['load_selection'] = sac.buttons([
                     sac.ButtonsItem(label='이전 재검토 자료', icon='box-fill'),
                     sac.ButtonsItem(label='초기평가 자료', icon='rewind-circle-fill')
-                ], format_func='title', align='start', size='small',
+                ], return_index=True, format_func='title', align='start', size='small',
                 label='__어떤 자료를 불러들일까요?__', position='left')
                 
-                # if sss['load_selection'] != previous_selection:
-                #     st.write("Data change")
-                #     if sss['load_selection'] == '이전 재검토 자료':
-                #         fill_survey('human', 'human')
+                if sss['load_selection'] != previous_selection:
+                    st.write("Data change")
+                    if sss['load_selection'] == 0:
+                        fill_survey('human', 'human')
 
-                #     elif sss['load_selection'] == '초기평가 자료':
-                #         fill_survey('initial', 'human')
+                    elif sss['load_selection'] == 1:
+                        fill_survey('initial', 'human')
 
                 st.info(f"__{human_page.current+1}/{len(sss['categories'])}: {category}__")
                 
@@ -456,17 +476,24 @@ if sss['ready'] and sss['authenticated']:
                     symptom = sss['symptoms'][category][index]
                     reason = gpt_survey.data.get(f"gpt-{symptom}", {'reason': ''})['reason']
                     reason = "" if reason!=reason else reason
+
+                    radio_col1, radio_col2 = st.columns([0.05,0.95])
+                    with radio_col2:
+                        human_survey.radio(symptom, 
+                                            options=range(4), 
+                                            format_func=lambda x: response_options[x],
+                                            horizontal=True,
+                                            id=f"human-{symptom}")
                     concordance = gpt_survey.data.get(f"gpt-{symptom}", {'value':0})['value'] == human_survey.data.get(f"human-{symptom}", {'value':0})['value']
+
                     if not concordance:
-                        st.write(":x:")
-                    human_survey.radio(symptom, 
-                                        options=range(4), 
-                                        format_func=lambda x: response_options[x],
-                                        horizontal=True,
-                                        id=f"human-{symptom}")
-                    # if reason:
-                    #     st.caption("☘️")
+                        radio_col1.write(":x:")
+                    else:
+                        radio_col1.write("")
                     
+                        # if reason:
+                        #     st.caption("☘️")
+                        
         with rev_col1:
             
             with PAGES['gpt'] as gpt_page:
@@ -485,8 +512,7 @@ if sss['ready'] and sss['authenticated']:
                     reason = gpt_survey.data.get(f"gpt-{symptom}", {'reason': ''})['reason']
                     reason = "" if reason!=reason else reason
                     concordance = gpt_survey.data[f"gpt-{symptom}"]['value'] == human_survey.data[f"human-{symptom}"]['value']
-                    if not concordance:
-                        st.write(":x:")
+
                     gpt_survey.radio(symptom,
                                     options=range(4), 
                                     format_func=lambda x: response_options[x],
