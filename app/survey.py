@@ -100,6 +100,9 @@ if 'human_survey_data' not in sss:
 if 'gpt_survey_data' not in sss:
     sss['gpt_survey_data'] = {}
     
+if 'human_survey_loaded' not in sss:
+    sss['human_survey_loaded'] = False
+    
     
     
 
@@ -380,7 +383,7 @@ if sss['ready'] and sss['authenticated']:
             st.subheader(f":blue[{sss['current_ID']}: {case['case_description']['sex']}/{case['case_description']['age']}]")
             
             scrollableTextbox(case['case_description']['description'], height=800, border=False)
-     
+
 
         with eval_col2:
             
@@ -430,16 +433,22 @@ if sss['ready'] and sss['authenticated']:
                 category = sss['categories'][human_page.current]
                 
                 st.warning("재검토: GPT 결과를 참조하여 수정할 수 있습니다.")
+                st.write(sss['human_survey_data'])
+
+                previous_selection = sss['load_selection']
                 sss['load_selection'] = sac.buttons([
                     sac.ButtonsItem(label='이전 재검토 자료', icon='box-fill'),
                     sac.ButtonsItem(label='초기평가 자료', icon='rewind-circle-fill')
                 ], format_func='title', align='start', size='small',
                 label='__어떤 자료를 불러들일까요?__', position='left')
                 
-                if sss['load_selection'] == '이전 재검토 자료':
-                    fill_survey('human', 'human')
-                elif sss['load_selection'] == '초기평가 자료':
-                    fill_survey('initial', 'human')
+                # if sss['load_selection'] != previous_selection:
+                #     st.write("Data change")
+                #     if sss['load_selection'] == '이전 재검토 자료':
+                #         fill_survey('human', 'human')
+
+                #     elif sss['load_selection'] == '초기평가 자료':
+                #         fill_survey('initial', 'human')
 
                 st.info(f"__{human_page.current+1}/{len(sss['categories'])}: {category}__")
                 
@@ -448,8 +457,9 @@ if sss['ready'] and sss['authenticated']:
                     reason = gpt_survey.data.get(f"gpt-{symptom}", {'reason': ''})['reason']
                     reason = "" if reason!=reason else reason
                     concordance = gpt_survey.data.get(f"gpt-{symptom}", {'value':0})['value'] == human_survey.data.get(f"human-{symptom}", {'value':0})['value']
-                    
-                    human_survey.radio(symptom + ('' if concordance else ' :x:'), 
+                    if not concordance:
+                        st.write(":x:")
+                    human_survey.radio(symptom, 
                                         options=range(4), 
                                         format_func=lambda x: response_options[x],
                                         horizontal=True,
@@ -475,7 +485,8 @@ if sss['ready'] and sss['authenticated']:
                     reason = gpt_survey.data.get(f"gpt-{symptom}", {'reason': ''})['reason']
                     reason = "" if reason!=reason else reason
                     concordance = gpt_survey.data[f"gpt-{symptom}"]['value'] == human_survey.data[f"human-{symptom}"]['value']
-                    
+                    if not concordance:
+                        st.write(":x:")
                     gpt_survey.radio(symptom,
                                     options=range(4), 
                                     format_func=lambda x: response_options[x],
