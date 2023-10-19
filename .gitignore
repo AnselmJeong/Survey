@@ -1,2 +1,3 @@
 .streamlit/firebase.json
+.streamlit/secrets.toml
 app/__pycache__
