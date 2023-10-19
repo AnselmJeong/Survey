@@ -289,7 +289,7 @@ def submit_survey_data(which):
 
 
 def fetch_db():
-    with st.spinner(f"Loading data..."):
+    with st.status(f"Loading data..."):
         print("Enter fetch db")
         
         if 'df' in sss:
