@@ -463,7 +463,6 @@ if sss['ready'] and sss['authenticated']:
                 label='__어떤 자료를 불러들일까요?__', position='left')
                 
                 if sss['load_selection'] != previous_selection:
-                    st.write("Data change")
                     if sss['load_selection'] == 0:
                         fill_survey('human', 'human')
 
