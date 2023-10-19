@@ -37,8 +37,8 @@ st.set_page_config(
 ########### Session Variables  ####################
 
 
-sss['load_selection'] = sss['load_selection']
-sss['tab_selection'] = sss['tab_selection']
+# sss['load_selection'] = sss['load_selection']
+# sss['tab_selection'] = sss['tab_selection']
 
 if 'authenticated' not in sss:
     sss['authenticated'] = None
