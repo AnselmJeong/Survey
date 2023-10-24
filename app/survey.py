@@ -87,11 +87,11 @@ if 'ID_changed' not in sss:
     sss['ID_changed'] = False
 
 if 'symptoms' not in sss:
-    sss['symptoms'] = None
+    sss['symptoms'] = {}
 if 'categories' not in sss:
-    sss['categories'] = None
+    sss['categories'] = []
 if 'cases' not in sss:
-    sss['cases'] = None
+    sss['cases'] = {}
 
 if 'ready' not in sss:
     sss['ready'] = False
