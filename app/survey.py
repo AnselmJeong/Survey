@@ -356,9 +356,9 @@ colored_header(
     description=f":orange[GPT와 함께 정신증상을 평가해보세요]",
     color_name="red-70",
 )
-st.write('initial ', sss['initialized'])
-st.write('authen ', sss['authenticated'])
-st.write('ready ', sss['ready'])
+# st.write('initial ', sss['initialized'])
+# st.write('authen ', sss['authenticated'])
+# st.write('ready ', sss['ready'])
 
 if sss['ready'] and sss['authenticated']:
     if not sss['initialized']:
