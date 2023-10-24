@@ -1,11 +1,12 @@
 from typing import Union
 
 import streamlit as st
+import streamlit_antd_components as sac
 
 
 class Pages(object):
     DEFAULT_PREV_BUTTON = lambda pages: st.button(
-        "Prev",
+        "이전",
         use_container_width=True,
         disabled=pages.disable_navigation or pages.current == 0,
         on_click=pages.previous,
@@ -13,7 +14,7 @@ class Pages(object):
     )
 
     DEFAULT_NEXT_BUTTON = lambda pages: st.button(
-        "Next",
+        "다음",
         type="primary",
         use_container_width=True,
         on_click=pages.next,
@@ -22,11 +23,19 @@ class Pages(object):
     )
 
     DEFAULT_SUBMIT_BUTTON = lambda pages: st.button(
-        "Submit",
+        "저장",
         type="primary",
         use_container_width=True,
         key=f"{pages.current_page_key}_btn_submit",
     )
+    
+    # DEFAULT_SUBMIT_BUTTON = lambda pages: sac.buttons([
+    #     sac.ButtonsItem(label='저장', 
+    #                     color='violet'
+    #                     )])
+        
+        
+        
 
     def __init__(
         self,

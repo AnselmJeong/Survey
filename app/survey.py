@@ -7,6 +7,7 @@ import streamlit_antd_components as sac
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.row import row
 from streamlit_extras.colored_header import colored_header
+from scipy.stats import spearmanr
 
 
 import functools
@@ -23,7 +24,8 @@ from utils import (
     get_doc_ref,
     get_symptoms,
     get_reverse_symptoms,
-    df_to_gpt_data
+    df_to_gpt_data,
+    get_value_list
 )
 
 from navigator import generate_navigator
@@ -79,7 +81,7 @@ if 'user_tab_selection' not in sss:
 # if 'tab_index' not in sss:
 #     sss['tab_index'] = None
 if 'load_selection' not in sss:
-    sss['load_selection'] = 0
+    sss['load_selection'] = -1
 
 if 'ID_changed' not in sss:
     sss['ID_changed'] = False
@@ -201,6 +203,7 @@ def on_ID_change():
     # 모두 준비되었음을 알린다.
     sss['initialized'] = True
     sss['ID_changed'] = True
+    sss['load_selection'] = -1
 
 
 
@@ -321,6 +324,8 @@ for which in SURVEY_NAMES:
 # sss.update(sss)
 
 with st.sidebar:
+    
+
   
     authenticator = get_authenticator("./.streamlit/credentials.yaml")
     st.session_state['name'], authenticated, st.session_state['username'] = authenticator.login('Login', 'main')
@@ -419,6 +424,8 @@ if sss['ready'] and sss['authenticated']:
                 def on_change():
                     initial_page.update(sss['current_category'])
                     
+                if len(sss['initial_survey_data']) == 0:
+                    sac.alert("아직 초기평가가 이루어지지 않았습니다.", banner=True, icon=True)
                 
                 st.selectbox("Select catetory", options=range(len(sss['categories'])),
                             index=initial_page.current,
@@ -462,12 +469,28 @@ if sss['ready'] and sss['authenticated']:
                 ], return_index=True, format_func='title', align='start', size='small',
                 label='__어떤 자료를 불러들일까요?__', position='left')
                 
+                # if sss['load_selection'] == -1:
+                #     sac.alert("재평가 관련 자료가 불러들여지지 않았습니다.", banner=True, icon=True)
+                if len(sss['human_survey_data']) == 0:
+                    sac.alert(message="아직 재평가가 한번도 이루어지지 않았습니다.", banner=True, icon=True)
+                elif sss['load_selection'] == 0:
+                    sac.alert(message="이전 재평가 자료를 불러들였습니다.", banner=True, icon=True)
+                elif sss['load_selection'] == 1:
+                    sac.alert(message="초기평가 자료를 불러들였습니다.", banner=True, icon=True)
+                
+                
+                # st.write('selection ', sss['load_selection'])
+                # st.write('previous ', previous_selection)
+                
                 if sss['load_selection'] != previous_selection:
+                # if True:
                     if sss['load_selection'] == 0:
                         fill_survey('human', 'human')
 
                     elif sss['load_selection'] == 1:
                         fill_survey('initial', 'human')
+                        
+                        
 
                 st.info(f"__{human_page.current+1}/{len(sss['categories'])}: {category}__")
                 
@@ -495,11 +518,28 @@ if sss['ready'] and sss['authenticated']:
                         
         with rev_col1:
             
+            value_list = get_value_list(gpt_data=gpt_survey.data, 
+                human_data=human_survey.data, 
+                symptoms=sss['symptoms'])
+            
+            
+            spearman, pval = spearmanr(value_list['gpt'], value_list['human'])
+            
+            ks = zip(value_list['gpt'], value_list['human'])
+            result = []
+            for k in ks:
+                result.append(k[0] == k[1])
+            correctness = round(sum(result)/len(result)*100, 2)
+            
             with PAGES['gpt'] as gpt_page:
                 category = sss['categories'][human_page.current]
                 st.warning("GPT 판독결과")
                 # add_vertical_space(1)
-                sac.divider()
+                sac.divider(key='div1')
+                
+                # sac.divider(key='div2')
+                sac.alert(f"GPT와 당신이 평가한 결과의 일치도는 {correctness}%, 상관계수는 {spearman:.2f} 입니다.", banner=True, icon=True)
+                
                                 
                 st.info(f"__{human_page.current+1}/{len(sss['categories'])}: {category}__")
                 
