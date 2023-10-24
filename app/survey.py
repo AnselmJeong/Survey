@@ -257,6 +257,7 @@ def produce_session_variables(GPT_output_filepath, case_directory, symptoms_json
 
 @st.cache_resource
 def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
+    print('initializing')
     df, IDs, symptoms, reverse_symptoms, categories, cases = produce_session_variables(GPT_output_filepath, case_directory, symptoms_json_path)
     sss['df'] = df
     sss['IDs'] = IDs
@@ -355,6 +356,9 @@ colored_header(
     description=f":orange[GPT와 함께 정신증상을 평가해보세요]",
     color_name="red-70",
 )
+# st.write('initial ', sss['initialized'])
+# st.write('authen ', sss['authenticated'])
+# st.write('ready ', sss['ready'])
 
 if sss['ready'] and sss['authenticated']:
     if not sss['initialized']:
