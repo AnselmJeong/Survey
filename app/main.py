@@ -5,7 +5,7 @@ import pandas as pd
 
 import streamlit as st
 from streamlit import session_state as sss
-import survey.streamlit_survey as ss
+import app.streamlit_survey as ss
 from streamlit_scrollable_textbox import scrollableTextbox
 
 import streamlit_antd_components as sac
@@ -13,7 +13,7 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.stylable_container import stylable_container
 
-from survey.utils import (
+from app.utils import (
     prepare_case_evaluation,
     get_unique_IDs,
     get_authenticator,
@@ -24,7 +24,7 @@ from survey.utils import (
     get_value_list,
 )
 
-from survey.navigator import generate_navigator
+from app.navigator import generate_navigator
 
 st.set_page_config(
     layout="wide",
@@ -237,7 +237,7 @@ def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
 
 def submit_survey_data(which):
     """
-    Submit survey.data to firebase using doc_ref
+    Submit app.data to firebase using doc_ref
     """
     payload = SURVEYS[which].data.copy()
 
@@ -416,15 +416,15 @@ if sss["ready"] and sss["authenticated"]:
                 for index in range(len(sss["symptoms"][category])):
                     symptom = sss["symptoms"][category][index]
 
-                    initial_survey.radio(
+                    initial_app.radio(
                         symptom,
                         options=range(4),
-                        # index = (initial_survey.data[f'initial-{symptom}']['value']),
+                        # index = (initial_app.data[f'initial-{symptom}']['value']),
                         format_func=lambda x: response_options[x],
                         horizontal=True,
                         id=f"initial-{symptom}",
                     )
-                # st.write(initial_survey.data)
+                # st.write(initial_app.data)
 
     if sss["user_tab_selection"] == 1:
         st.subheader(
@@ -506,14 +506,14 @@ if sss["ready"] and sss["authenticated"]:
 
                 for index in range(len(sss["symptoms"][category])):
                     symptom = sss["symptoms"][category][index]
-                    reason = gpt_survey.data.get(f"gpt-{symptom}", {"reason": ""})[
+                    reason = gpt_app.data.get(f"gpt-{symptom}", {"reason": ""})[
                         "reason"
                     ]
                     reason = "" if reason != reason else reason
 
                     radio_col1, radio_col2 = st.columns([0.05, 0.95])
                     with radio_col2:
-                        human_survey.radio(
+                        human_app.radio(
                             symptom,
                             options=range(4),
                             format_func=lambda x: response_options[x],
@@ -521,8 +521,8 @@ if sss["ready"] and sss["authenticated"]:
                             id=f"human-{symptom}",
                         )
                     concordance = (
-                        gpt_survey.data.get(f"gpt-{symptom}", {"value": 0})["value"]
-                        == human_survey.data.get(f"human-{symptom}", {"value": 0})[
+                        gpt_app.data.get(f"gpt-{symptom}", {"value": 0})["value"]
+                        == human_app.data.get(f"human-{symptom}", {"value": 0})[
                             "value"
                         ]
                     )
@@ -537,8 +537,8 @@ if sss["ready"] and sss["authenticated"]:
 
         with rev_col1:
             value_list = get_value_list(
-                gpt_data=gpt_survey.data,
-                human_data=human_survey.data,
+                gpt_data=gpt_app.data,
+                human_data=human_app.data,
                 symptoms=sss["symptoms"],
             )
 
@@ -581,18 +581,18 @@ if sss["ready"] and sss["authenticated"]:
                 for index in range(len(sss["symptoms"][category])):
                     symptom = sss["symptoms"][category][index]
 
-                    # severity = response_options[gpt_survey.data[f"gpt-{symptom}"]['value']]
+                    # severity = response_options[gpt_app.data[f"gpt-{symptom}"]['value']]
 
-                    reason = gpt_survey.data.get(f"gpt-{symptom}", {"reason": ""})[
+                    reason = gpt_app.data.get(f"gpt-{symptom}", {"reason": ""})[
                         "reason"
                     ]
                     reason = "" if reason != reason else reason
                     concordance = (
-                        gpt_survey.data[f"gpt-{symptom}"]["value"]
-                        == human_survey.data[f"human-{symptom}"]["value"]
+                        gpt_app.data[f"gpt-{symptom}"]["value"]
+                        == human_app.data[f"human-{symptom}"]["value"]
                     )
 
-                    gpt_survey.radio(
+                    gpt_app.radio(
                         symptom,
                         options=range(4),
                         format_func=lambda x: response_options[x],
