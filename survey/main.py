@@ -5,14 +5,15 @@ import pandas as pd
 
 import streamlit as st
 from streamlit import session_state as sss
-import streamlit_survey as ss
+import survey.streamlit_survey as ss
 from streamlit_scrollable_textbox import scrollableTextbox
 
 import streamlit_antd_components as sac
 from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.colored_header import colored_header
+from streamlit_extras.stylable_container import stylable_container
 
-from utils import (
+from survey.utils import (
     prepare_case_evaluation,
     get_unique_IDs,
     get_authenticator,
@@ -23,7 +24,7 @@ from utils import (
     get_value_list,
 )
 
-from navigator import generate_navigator
+from survey.navigator import generate_navigator
 
 st.set_page_config(
     layout="wide",
@@ -42,7 +43,6 @@ if "name" not in sss:
     sss["name"] = ""
 if "username" not in sss:
     sss["username"] = ""
-
 if "doc_ref" not in sss:
     sss["doc_ref"] = None
 if "initialized" not in sss:
@@ -337,7 +337,7 @@ if sss["ready"] and sss["authenticated"]:
     with col_info:
         evaluated, reviewed = sss["evaluated"], sss["reviewed"]
         st.markdown(
-            f"초기평가: {'⭕️' if evaluated else '❌'}, 재검토: {'⭕️' if reviewed else '❌'}"
+            f"초기평가: {'🔵' if evaluated else '❌'}, 재검토: {'🔵' if reviewed else '❌'}"
         )
 
     sac.divider(icon="magic", align="center")
@@ -439,30 +439,40 @@ if sss["ready"] and sss["authenticated"]:
         with rev_col2:
             with PAGES["human"] as human_page:
                 category = sss["categories"][human_page.current]
+                with stylable_container(
+                    "human_container",
+                    css_styles="""
+                    {
+                        border: 1px solid rgba(49, 51, 63, 0.2);
+                        border-radius: 0.5rem;
+                        padding-left: 10px;
+                        vertical-align: top;
+                    }
+                    """,
+                ):
+                    st.warning("재검토: GPT 결과를 참조하여 수정할 수 있습니다.")
+                    # st.write(sss['human_survey_data'])
 
-                st.warning("재검토: GPT 결과를 참조하여 수정할 수 있습니다.")
-                # st.write(sss['human_survey_data'])
-
-                previous_selection = sss["load_selection"]
-                sss["load_selection"] = sac.buttons(
-                    [
-                        sac.ButtonsItem(label="이전 재검토 자료", icon="box-fill"),
-                        sac.ButtonsItem(
-                            label="초기평가 자료", icon="rewind-circle-fill"
-                        ),
-                    ],
-                    return_index=True,
-                    format_func="title",
-                    align="start",
-                    size="small",
-                    label="__어떤 자료를 불러들일까요?__",
-                )
+                    previous_selection = sss["load_selection"]
+                    sss["load_selection"] = sac.buttons(
+                        [
+                            sac.ButtonsItem(label="이전 재검토 자료", icon="box-fill"),
+                            sac.ButtonsItem(
+                                label="초기평가 자료", icon="rewind-circle-fill"
+                            ),
+                        ],
+                        return_index=True,
+                        format_func="title",
+                        align="start",
+                        size="small",
+                        label="__어떤 자료를 불러들일까요?__",
+                    )
 
                 # if sss['load_selection'] == -1:
                 #     sac.alert("재평가 관련 자료가 불러들여지지 않았습니다.", banner=True, icon=True)
                 if len(sss["human_survey_data"]) == 0:
                     sac.alert(
-                        message="아직 재평가가 한번도 이루어지지 않았습니다.",
+                        label="아직 재평가가 한번도 이루어지지 않았습니다.",
                         banner=True,
                         icon=True,
                     )
@@ -541,10 +551,21 @@ if sss["ready"] and sss["authenticated"]:
             correctness = round(sum(result) / len(result) * 100, 2)
 
             with PAGES["gpt"] as gpt_page:
-                category = sss["categories"][human_page.current]
-                st.warning("GPT 판독결과")
-                add_vertical_space(1)
-                sac.divider(key="div1")
+                with stylable_container(
+                    "dummy_container",
+                    css_styles="""
+                    {
+                        border: 1px solid rgba(49, 51, 63, 0.2);
+                        border-radius: 0.5rem;
+                        padding-bottom: calc(4.3em + 1px);
+                        vertical-align: top;
+                    }
+                    """,
+                ):
+                    category = sss["categories"][human_page.current]
+                    st.warning("GPT 판독결과")
+
+                # sac.divider(key="div1")
 
                 # sac.divider(key='div2')
                 sac.alert(

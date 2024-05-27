@@ -22,8 +22,8 @@ from typing import Any, Hashable, List, Optional, Union
 
 import streamlit as st
 
-from streamlit_survey.pages import Pages
-from streamlit_survey.survey_component import (
+from survey.streamlit_survey.pages import Pages
+from survey.streamlit_survey.survey_component import (
     CheckBox,
     DateInput,
     MultiSelect,
@@ -101,8 +101,13 @@ class StreamlitSurvey:
 
     BASE_NAME = "__streamlit-survey-data"
 
-    def __init__(self, label: str = "", data: dict = None, auto_id: bool = True,
-                 disable_navigation=False):
+    def __init__(
+        self,
+        label: str = "",
+        data: dict = None,
+        auto_id: bool = True,
+        disable_navigation=False,
+    ):
         """
         Parameters
         ----------
@@ -126,8 +131,7 @@ class StreamlitSurvey:
 
         self._components = []  # Active (currently displayed) survey components
         self.multipages = []
-        
-  
+
     def _add_component(self, component: SurveyComponent):
         self._components.append(component)
 
@@ -147,7 +151,9 @@ class StreamlitSurvey:
         if self.auto_id:
             return label
         else:
-            raise RuntimeError("An ID should be explicitely provided if `auto_id` is set to False.")
+            raise RuntimeError(
+                "An ID should be explicitely provided if `auto_id` is set to False."
+            )
 
     def pages(self, index: Union[int, list], on_submit=None, label: str = ""):
         """
@@ -173,17 +179,22 @@ class StreamlitSurvey:
             Function to call when the user submits the survey.
         label: str
             Label for the page group.
-        
+
 
         Returns
         -------
         Pages
             Pages object
         """
-        pages = Pages(index, key=self.data_name + "_Pages_" + label, on_submit=on_submit, 
-                      label=label, disable_navigation=self.disable_navigation)
+        pages = Pages(
+            index,
+            key=self.data_name + "_Pages_" + label,
+            on_submit=on_submit,
+            label=label,
+            disable_navigation=self.disable_navigation,
+        )
         self.multipages.append(pages)
-         
+
         return pages
 
     def to_json(self, path: Optional[PathLike] = None) -> Optional[str]:
@@ -226,7 +237,9 @@ class StreamlitSurvey:
                 return
             self.from_file(file)
 
-        file = st.file_uploader(label, type="json", key=file_key, on_change=load_json, **kwargs)
+        file = st.file_uploader(
+            label, type="json", key=file_key, on_change=load_json, **kwargs
+        )
         return file
 
     def download_button(self, label: str = "", file_name="survey.json", **kwargs):
@@ -240,7 +253,9 @@ class StreamlitSurvey:
         file_name: str
             Name of the downloaded file
         """
-        download = st.download_button(label, data=self.to_json(), file_name=file_name, **kwargs)
+        download = st.download_button(
+            label, data=self.to_json(), file_name=file_name, **kwargs
+        )
         return download
 
     def from_json(self, path: PathLike):
@@ -272,7 +287,7 @@ class StreamlitSurvey:
         for _, data in self.data.items():
             if "widget_key" in data and data["widget_key"] in st.session_state:
                 st.session_state[data["widget_key"]] = data["value"]
-                
+
     def from_data(self, dictdata):
         """
         Load survey data from a JSON file
@@ -285,20 +300,16 @@ class StreamlitSurvey:
         # Update survey data
         self.data.clear()
         self.data.update(dictdata)
-        
-        if len(dictdata):
 
+        if len(dictdata):
             # Update displayed Streamlit widgets values
             for _, data in self.data.items():
                 if "widget_key" in data and data["widget_key"] in st.session_state:
                     st.session_state[data["widget_key"]] = data["value"]
         else:
             for k, v in st.session_state.items():
-                if "__streamlit-survey-component_"+self.label in k:
+                if "__streamlit-survey-component_" + self.label in k:
                     st.session_state[k] = 0
-                    
-        
-
 
     def text_input(self, label: str = "", id: str = None, **kwargs) -> str:
         """

@@ -1,0 +1,1 @@
+This is a research project for comparing user rating to GPT rating.
