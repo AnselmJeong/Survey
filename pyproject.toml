@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "survey"
-version = "0.1.0"
+version = "0.2.0"
 description = "Program to compare GPT's and human capacity to evaluate mental symptoms"
 authors = ["Anselm Jeong"]
 readme = "README.md"

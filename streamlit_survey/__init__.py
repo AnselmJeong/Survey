@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from app.streamlit_app.streamlit_survey import StreamlitSurvey
-from app.streamlit_app.survey_component import (
+from streamlit_survey.streamlit_survey import StreamlitSurvey
+from streamlit_survey.survey_component import (
     CheckBox,
     DateInput,
     MultiSelect,

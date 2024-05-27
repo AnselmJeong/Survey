@@ -22,8 +22,8 @@ from typing import Any, Hashable, List, Optional, Union
 
 import streamlit as st
 
-from survey.streamlit_survey.pages import Pages
-from survey.streamlit_survey.survey_component import (
+from streamlit_survey.pages import Pages
+from streamlit_survey.survey_component import (
     CheckBox,
     DateInput,
     MultiSelect,
