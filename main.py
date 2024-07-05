@@ -134,7 +134,7 @@ def fill_survey(source, target):
     Fill target StreamlitSurvey with source data
     Data should have been prepared in session_state
     """
-    print("Enter fill_survey")
+    # print("Enter fill_survey")
     if source != target:
         payload = copy_survey_data(source, target)
 
@@ -217,7 +217,7 @@ def produce_session_variables(GPT_output_filepath, case_directory, symptoms_json
 
 
 def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
-    print("initializing")
+    # print("initializing")
     df, IDs, symptoms, reverse_symptoms, categories, cases = produce_session_variables(
         GPT_output_filepath, case_directory, symptoms_json_path
     )
@@ -257,7 +257,7 @@ def submit_survey_data(which):
 
 def fetch_db():
     with st.status(f"Loading data..."):
-        print("Enter fetch db")
+        # print("Enter fetch db")
 
         if "df" in sss:
             sss["gpt_survey_data"] = df_to_gpt_data(sss["df"], sss["current_ID"])

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "survey"
+name = "streamlit_survey"
 version = "0.2.0"
 description = "Program to compare GPT's and human capacity to evaluate mental symptoms"
 authors = ["Anselm Jeong"]
