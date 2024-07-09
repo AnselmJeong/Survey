@@ -144,17 +144,30 @@ def df_to_gpt_data(df: pd.DataFrame, ID) -> dict:
     return new_dict
 
 
+def get_status(user, ID):
+    """
+    Get the 'evaluated' and 'reviewed' status of a case
+    """
+    status = {"ID": str(ID), "초기평가": "❌", "재검토": "❌"}
+    if data := get_doc_ref(user, ID).get().to_dict():
+        status["초기평가"] = ["❌", "🔵"][data.get("evaluated", False)]
+        status["재검토"] = ["❌", "🔵"][data.get("reviewed", False)]
+    return status
+
+
+def get_status_list(user, IDs):
+    return pd.DataFrame([get_status("anselmjeong", ID) for ID in IDs])
+
+
 # def is_reviewed(user, ID):
-#     if doc_ref:= get_doc_ref(user, ID):
-#         if data:= doc_ref.get().to_dict():
-#             return data.get('reviewed', False)
+#     if data:= get_doc_ref(user, ID).get().to_dict():
+#         return data.get('reviewed', False)
 #     else:
 #         return False
 
 # def is_evaluated(user, ID):
-#     if doc_ref:= get_doc_ref(user, ID):
-#         if data:= doc_ref.get().to_dict():
-#             return data.get('evaluated', False)
+#     if data := get_doc_ref(user, ID).get().to_dict():
+#         return data.get("evaluated", False)
 #     else:
 #         return False
 

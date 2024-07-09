@@ -2,3 +2,7 @@
 .streamlit/secrets.toml
 app/__pycache__
 .venv
+Untitled-1.ipynb
+main.py.svg
+utils.py.svg
+.DS_Store

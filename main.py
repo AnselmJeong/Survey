@@ -22,6 +22,7 @@ from utils import (
     get_reverse_symptoms,
     df_to_gpt_data,
     get_value_list,
+    get_status_list,
 )
 
 from navigator import generate_navigator
@@ -51,6 +52,9 @@ if "initialized" not in sss:
 
 if "IDs" not in sss:
     sss["IDs"] = []
+
+if "status_list" not in sss:
+    sss["status_list"] = None
 
 if "current_index" not in sss:
     sss["current_index"] = 0
@@ -233,6 +237,7 @@ def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
     # sss['flat_symptoms'] = functools.reduce(lambda x, y: x+y, list(sss['symptoms'].values()), [])
     sss["cases"] = cases
     sss["ready"] = True
+    sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
 
 
 def submit_survey_data(which):
@@ -250,6 +255,7 @@ def submit_survey_data(which):
         payload["reviewed"] = True
 
     sss["doc_ref"].set(payload, merge=True)
+    sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
     messagebox = st.success("Data succesfully submitted")  # Display the alert
     sleep(5)  # Wait for 3 seconds
     messagebox.empty()  # Clear the alert
@@ -309,8 +315,11 @@ with st.sidebar:
         st.subheader(f"{today}에 입장하셨습니다.")
         # st.checkbox("아직 판독하지 않은 사례들만 표시", False, key='only_unevaluated', on_change=set_unevaluated_IDs)
         authenticator.logout("Logout", "main")
+        st.markdown("Status List")
+        st.dataframe(sss["status_list"])
 
     sss["authenticated"] = authenticated
+
 
 ############################################################################################################
 
