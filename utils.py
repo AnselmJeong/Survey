@@ -149,14 +149,16 @@ def get_status(user, ID):
     Get the 'evaluated' and 'reviewed' status of a case
     """
     status = {"ID": str(ID), "초기평가": "❌", "재검토": "❌"}
-    if data := get_doc_ref(user, ID).get().to_dict():
-        status["초기평가"] = ["❌", "🔵"][data.get("evaluated", False)]
-        status["재검토"] = ["❌", "🔵"][data.get("reviewed", False)]
+    if doc_ref := get_doc_ref(user, ID):
+        if data := doc_ref.get().to_dict():
+            status["초기평가"] = ["❌", "🔵"][data.get("evaluated", False)]
+            status["재검토"] = ["❌", "🔵"][data.get("reviewed", False)]
     return status
 
 
 def get_status_list(user, IDs):
-    return pd.DataFrame([get_status("anselmjeong", ID) for ID in IDs])
+    df = pd.DataFrame([get_status(user, ID) for ID in IDs])
+    return df
 
 
 # def is_reviewed(user, ID):

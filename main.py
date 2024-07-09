@@ -152,6 +152,7 @@ def on_ID_change():
     indended to used as a callback function
     If current patient ID is changed, then...
     """
+    print("ID changed")
 
     # current_ID를 current_index에 맞추어 갱신
     sss["current_ID"] = sss["IDs"][sss["current_index"]]
@@ -162,12 +163,12 @@ def on_ID_change():
     # StreamlitSurvey가 표시하는 data를 바꾸고
     for which in SURVEY_NAMES:
         fill_survey(which, which)
-    # 첫번째 page로 돌린다.
-    rewind_pages()
     # 모두 준비되었음을 알린다.
     sss["initialized"] = True
     sss["ID_changed"] = True
     sss["load_selection"] = -1
+    # 첫번째 page로 돌린다.
+    rewind_pages()
 
 
 def prepare_cases(case_directory, df, IDs):
@@ -358,15 +359,17 @@ if sss["ready"] and sss["authenticated"]:
     _, col_tab, _ = st.columns([0.2, 0.6, 0.2])
     with col_tab:
         if sss["ID_changed"]:
-            sss["user_tab_selection"] = sac.segmented(
+            sac.segmented(
                 [
                     sac.SegmentedItem(label="초기평가"),
                     sac.SegmentedItem(label="재검토"),
                 ],
-                return_index=True,
+                # return_index=True,
+                use_container_width=True,
                 index=0,
             )
             sss["ID_changed"] = False
+            sss["user_tab_selection"] = 0
             st.rerun()
         else:
             sss["user_tab_selection"] = sac.segmented(
@@ -374,10 +377,9 @@ if sss["ready"] and sss["authenticated"]:
                     sac.SegmentedItem(label="초기평가"),
                     sac.SegmentedItem(label="재검토"),
                 ],
+                use_container_width=True,
                 return_index=True,
             )
-
-        # st.write('sss', sss['user_tab_selection'])
 
     if sss["user_tab_selection"] == 0:
         #### ========= initial evaluation ========== ###
