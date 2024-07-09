@@ -5,13 +5,15 @@ import pandas as pd
 
 import streamlit as st
 from streamlit import session_state as sss
-import streamlit_survey as ss
 from streamlit_scrollable_textbox import scrollableTextbox
-
-import streamlit_antd_components as sac
-from streamlit_extras.add_vertical_space import add_vertical_space
 from streamlit_extras.colored_header import colored_header
 from streamlit_extras.stylable_container import stylable_container
+
+import streamlit_antd_components as sac
+import streamlit_survey as ss
+
+# from streamlit_extras.add_vertical_space import add_vertical_space
+
 
 from utils import (
     prepare_case_evaluation,
@@ -117,7 +119,7 @@ def copy_survey_data(source, target):
         temp_v = v.copy()
         temp_v["widget_key"] = v["widget_key"].replace(source, target)
         temp2[k.replace(source, target)] = temp_v
-
+    # sss[f"{target}_survey_data"] = temp2
     return temp2
 
 
@@ -145,6 +147,7 @@ def fill_survey(source, target):
     else:
         payload = sss[f"{source}_survey_data"]
     SURVEYS[target].from_data(payload)
+    # print(payload)
 
 
 def on_ID_change():
@@ -152,7 +155,7 @@ def on_ID_change():
     indended to used as a callback function
     If current patient ID is changed, then...
     """
-    print("ID changed")
+    # print("ID changed")
 
     # current_ID를 current_index에 맞추어 갱신
     sss["current_ID"] = sss["IDs"][sss["current_index"]]
@@ -160,6 +163,7 @@ def on_ID_change():
     set_doc_ref()
     # 자료를 불러들이고
     fetch_db()
+    sleep(3)
     # StreamlitSurvey가 표시하는 data를 바꾸고
     for which in SURVEY_NAMES:
         fill_survey(which, which)
@@ -252,39 +256,48 @@ def submit_survey_data(which):
 
     if which == "initial":
         payload["evaluated"] = True
+
     elif which == "human":
         payload["reviewed"] = True
 
     sss["doc_ref"].set(payload, merge=True)
+    sleep(3)  # Wait for 3 seconds
+
+    if which == "initial":
+        doc = sss["doc_ref"].get()
+        sss["initial_survey_data"] = {
+            k: v for k, v in doc.to_dict().items() if "initial-" in k
+        }
+        fill_survey("initial", "human")
+
     sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
     messagebox = st.success("Data succesfully submitted")  # Display the alert
-    sleep(5)  # Wait for 3 seconds
+    sleep(2)
     messagebox.empty()  # Clear the alert
 
 
 def fetch_db():
-    with st.status(f"Loading data..."):
-        # print("Enter fetch db")
+    # print("Enter fetch db")
 
-        if "df" in sss:
-            sss["gpt_survey_data"] = df_to_gpt_data(sss["df"], sss["current_ID"])
+    if "df" in sss:
+        sss["gpt_survey_data"] = df_to_gpt_data(sss["df"], sss["current_ID"])
 
-        doc = sss["doc_ref"].get()
+    doc = sss["doc_ref"].get()
 
-        if doc.exists:
-            sss["initial_survey_data"] = {
-                k: v for k, v in doc.to_dict().items() if f"initial-" in k
-            }
-            sss["human_survey_data"] = {
-                k: v for k, v in doc.to_dict().items() if "human-" in k
-            }
-            sss["evaluated"] = doc.to_dict().get("evaluated", False)
-            sss["reviewed"] = doc.to_dict().get("reviewed", False)
-        else:
-            sss["initial_survey_data"] = {}
-            sss["human_survey_data"] = {}
-            sss["evaluated"] = False
-            sss["reviewed"] = False
+    if doc.exists:
+        sss["initial_survey_data"] = {
+            k: v for k, v in doc.to_dict().items() if "initial-" in k
+        }
+
+        sss["human_survey_data"] = copy_survey_data("initial", "human")
+
+        sss["evaluated"] = doc.to_dict().get("evaluated", False)
+        sss["reviewed"] = doc.to_dict().get("reviewed", False)
+    else:
+        sss["initial_survey_data"] = {}
+        sss["human_survey_data"] = {}
+        sss["evaluated"] = False
+        sss["reviewed"] = False
 
 
 initialize_main(
@@ -450,67 +463,12 @@ if sss["ready"] and sss["authenticated"]:
         with rev_col2:
             with PAGES["human"] as human_page:
                 category = sss["categories"][human_page.current]
-                with stylable_container(
-                    "human_container",
-                    css_styles="""
-                    {
-                        border: 1px solid rgba(49, 51, 63, 0.2);
-                        border-radius: 0.5rem;
-                        padding-left: 10px;
-                        vertical-align: top;
-                    }
-                    """,
-                ):
-                    st.warning("재검토: GPT 결과를 참조하여 수정할 수 있습니다.")
-                    # st.write(sss['human_survey_data'])
 
-                    previous_selection = sss["load_selection"]
-                    sss["load_selection"] = sac.buttons(
-                        [
-                            sac.ButtonsItem(label="이전 재검토 자료", icon="box-fill"),
-                            sac.ButtonsItem(
-                                label="초기평가 자료", icon="rewind-circle-fill"
-                            ),
-                        ],
-                        return_index=True,
-                        format_func="title",
-                        align="start",
-                        size="small",
-                        label="__어떤 자료를 불러들일까요?__",
-                    )
-
-                # if sss['load_selection'] == -1:
-                #     sac.alert("재평가 관련 자료가 불러들여지지 않았습니다.", banner=True, icon=True)
-                if len(sss["human_survey_data"]) == 0:
-                    sac.alert(
-                        label="아직 재평가가 한번도 이루어지지 않았습니다.",
-                        banner=True,
-                        icon=True,
-                    )
-                elif sss["load_selection"] == 0:
-                    sac.alert(
-                        label="이전 재평가 자료를 불러들였습니다.",
-                        banner=True,
-                        icon=True,
-                    )
-                elif sss["load_selection"] == 1:
-                    sac.alert(
-                        label="초기평가 자료를 불러들였습니다.",
-                        banner=True,
-                        icon=True,
-                    )
-
-                # st.write('selection ', sss['load_selection'])
-                # st.write('previous ', previous_selection)
-
-                if sss["load_selection"] != previous_selection:
-                    # if True:
-                    if sss["load_selection"] == 0:
-                        fill_survey("human", "human")
-
-                    elif sss["load_selection"] == 1:
-                        fill_survey("initial", "human")
-
+                st.warning("재검토")
+                sac.alert(
+                    "GPT 결과를 참조하여 수정하신 후 저정해주세요.",
+                    icon=True,
+                )
                 st.info(
                     f"__{human_page.current+1}/{len(sss['categories'])}: {category}__"
                 )
@@ -562,23 +520,9 @@ if sss["ready"] and sss["authenticated"]:
             correctness = round(sum(result) / len(result) * 100, 2)
 
             with PAGES["gpt"] as gpt_page:
-                with stylable_container(
-                    "dummy_container",
-                    css_styles="""
-                    {
-                        border: 1px solid rgba(49, 51, 63, 0.2);
-                        border-radius: 0.5rem;
-                        padding-bottom: calc(4.3em + 1px);
-                        vertical-align: top;
-                    }
-                    """,
-                ):
-                    category = sss["categories"][human_page.current]
-                    st.warning("GPT 판독결과")
+                category = sss["categories"][human_page.current]
+                st.warning("GPT 판독결과")
 
-                # sac.divider(key="div1")
-
-                # sac.divider(key='div2')
                 sac.alert(
                     f"GPT와 당신이 평가한 결과의 일치도는 {correctness}%, 상관계수는 {spearman:.2f} 입니다.",
                     banner=True,
@@ -637,3 +581,6 @@ st.markdown(
             """,
     unsafe_allow_html=True,
 )
+
+# st.write(sss["__streamlit-survey-component_human_human-paranoid_delusion"])
+st.write(sss["human_survey_data"])

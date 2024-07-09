@@ -1,8 +1,7 @@
 .streamlit/firebase.json
 .streamlit/secrets.toml
-__pycache__
 .venv
-Untitled-1.ipynb
 main.py.svg
 utils.py.svg
 .DS_Store
+__pycache__

@@ -23,16 +23,16 @@ def generate_navigator(sss, callback=None):
             use_container_width=True,
             disabled=sss["current_index"] == 0,
         )
-        (
-            col2.selectbox(
-                "Select ID:",
-                range(len(sss["IDs"])),
-                key="current_index",
-                format_func=lambda x: sss["IDs"][x],
-                label_visibility="collapsed",
-                on_change=callback,
-            ),
+
+        col2.selectbox(
+            "Select ID:",
+            range(len(sss["IDs"])),
+            key="current_index",
+            format_func=lambda x: f'{x:02d}: {sss["IDs"][x]}',
+            label_visibility="collapsed",
+            on_change=callback,
         )
+
         col3.button(
             "다음환자",
             on_click=_next,
