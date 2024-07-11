@@ -255,24 +255,19 @@ def submit_survey_data(which):
         v.update({"timestamp": datetime.today().strftime("%Y-%m-%d, %H:%M:%S")})
 
     if which == "initial":
+        sss["initial_survey_data"] = {
+            k: v for k, v in payload.items() if "initial-" in k
+        }
+        fill_survey("initial", "human")
         payload["evaluated"] = True
 
     elif which == "human":
         payload["reviewed"] = True
 
     sss["doc_ref"].set(payload, merge=True)
-    sleep(3)  # Wait for 3 seconds
 
-    if which == "initial":
-        doc = sss["doc_ref"].get()
-        sss["initial_survey_data"] = {
-            k: v for k, v in doc.to_dict().items() if "initial-" in k
-        }
-        fill_survey("initial", "human")
-
-    sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
     messagebox = st.success("Data succesfully submitted")  # Display the alert
-    sleep(2)
+    sleep(1)
     messagebox.empty()  # Clear the alert
 
 
