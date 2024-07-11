@@ -163,7 +163,7 @@ def on_ID_change():
     set_doc_ref()
     # 자료를 불러들이고
     fetch_db()
-    sleep(3)
+    sleep(1)
     # StreamlitSurvey가 표시하는 data를 바꾸고
     for which in SURVEY_NAMES:
         fill_survey(which, which)
@@ -225,6 +225,7 @@ def produce_session_variables(GPT_output_filepath, case_directory, symptoms_json
     return (df, IDs, symptoms, reverse_symptoms, categories, cases)
 
 
+@st.cache_data
 def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
     # print("initializing")
     df, IDs, symptoms, reverse_symptoms, categories, cases = produce_session_variables(
@@ -265,6 +266,7 @@ def submit_survey_data(which):
         payload["reviewed"] = True
 
     sss["doc_ref"].set(payload, merge=True)
+    sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
 
     messagebox = st.success("Data succesfully submitted")  # Display the alert
     sleep(1)
