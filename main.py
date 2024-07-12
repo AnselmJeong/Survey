@@ -66,8 +66,8 @@ if "current_ID" not in sss:
 if "user_tab_selection" not in sss:
     sss["user_tab_selection"] = None
 
-if "load_selection" not in sss:
-    sss["load_selection"] = -1
+# if "load_selection" not in sss:
+#     sss["load_selection"] = -1
 
 if "ID_changed" not in sss:
     sss["ID_changed"] = False
@@ -103,7 +103,7 @@ initial_survey = ss.StreamlitSurvey("initial")
 human_survey = ss.StreamlitSurvey("human")
 gpt_survey = ss.StreamlitSurvey("gpt", disable_navigation=True)
 
-SURVEY_NAMES = ["initial", "gpt", "human"]
+SURVEY_NAMES = ["initial", "human", "gpt"]
 PAGES = {}
 SURVEYS = {"initial": initial_survey, "gpt": gpt_survey, "human": human_survey}
 
@@ -145,9 +145,19 @@ def fill_survey(source, target):
         payload = copy_survey_data(source, target)
 
     else:
-        payload = sss[f"{source}_survey_data"]
+        payload = sss[f"{target}_survey_data"]
     SURVEYS[target].from_data(payload)
-    # print(payload)
+
+    # for which in SURVEY_NAMES:
+    #     PAGES[which] = SURVEYS[which].pages(
+    #         len(sss["categories"]), label=which, on_submit=submit_survey_data
+    #     )
+
+
+# def refresh_human_survey():
+#     human_survey.multipages[0].next()
+#     print("flipped")
+#     human_survey.multipages[0].previous()
 
 
 def on_ID_change():
@@ -163,16 +173,26 @@ def on_ID_change():
     set_doc_ref()
     # 자료를 불러들이고
     fetch_db()
-    sleep(1)
     # StreamlitSurvey가 표시하는 data를 바꾸고
-    for which in SURVEY_NAMES:
-        fill_survey(which, which)
+
     # 모두 준비되었음을 알린다.
     sss["initialized"] = True
     sss["ID_changed"] = True
-    sss["load_selection"] = -1
+    # sss["load_selection"] = -1
     # 첫번째 page로 돌린다.
     rewind_pages()
+
+    if len(sss["human_survey_data"]) == 0:
+        fill_survey("initial", "human")
+    else:
+        fill_survey("human", "human")
+
+    fill_survey("initial", "initial")
+    fill_survey("gpt", "gpt")
+
+    # refresh_human_survey()
+
+    # st.rerun()
 
 
 def prepare_cases(case_directory, df, IDs):
@@ -271,6 +291,7 @@ def submit_survey_data(which):
         ] = "🔵"
 
     elif which == "human":
+        # sss["human_survey_data"] = {k: v for k, v in payload.items() if "human-" in k}
         payload["reviewed"] = True
         sss["status_list"].loc[
             sss["status_list"]["ID"] == str(sss["current_ID"]), "재검토"
@@ -296,10 +317,13 @@ def fetch_db():
             k: v for k, v in doc.to_dict().items() if "initial-" in k
         }
 
-        sss["human_survey_data"] = copy_survey_data("initial", "human")
+        sss["human_survey_data"] = {
+            k: v for k, v in doc.to_dict().items() if "human-" in k
+        }
 
         sss["evaluated"] = doc.to_dict().get("evaluated", False)
         sss["reviewed"] = doc.to_dict().get("reviewed", False)
+
     else:
         sss["initial_survey_data"] = {}
         sss["human_survey_data"] = {}
@@ -380,29 +404,17 @@ if sss["ready"] and sss["authenticated"]:
 
     _, col_tab, _ = st.columns([0.2, 0.6, 0.2])
     with col_tab:
-        if sss["ID_changed"]:
-            sac.segmented(
-                [
-                    sac.SegmentedItem(label="초기평가"),
-                    sac.SegmentedItem(label="재검토"),
-                ],
-                # return_index=True,
-                use_container_width=True,
-                index=0,
-            )
-            sss["ID_changed"] = False
-            sss["user_tab_selection"] = 0
-            st.rerun()
-        else:
-            sss["user_tab_selection"] = sac.segmented(
-                [
-                    sac.SegmentedItem(label="초기평가"),
-                    sac.SegmentedItem(label="재검토"),
-                ],
-                use_container_width=True,
-                return_index=True,
-            )
+        sss["user_tab_selection"] = sac.segmented(
+            [
+                sac.SegmentedItem(label="초기평가"),
+                sac.SegmentedItem(label="재검토"),
+            ],
+            index=0,
+            return_index=True,
+            use_container_width=True,
+        )
 
+    # st.write(sss["user_tab_selection"])
     if sss["user_tab_selection"] == 0:
         #### ========= initial evaluation ========== ###
 
@@ -481,23 +493,15 @@ if sss["ready"] and sss["authenticated"]:
                 st.info(
                     f"__{human_page.current+1}/{len(sss['categories'])}: {category}__"
                 )
+                # st.write(
+                #     {k: v for k, v in SURVEYS["human"].data.items() if "delusion" in k}
+                # )
 
                 for index in range(len(sss["symptoms"][category])):
                     symptom = sss["symptoms"][category][index]
-                    reason = gpt_survey.data.get(f"gpt-{symptom}", {"reason": ""})[
-                        "reason"
-                    ]
-                    reason = "" if reason != reason else reason
 
                     radio_col1, radio_col2 = st.columns([0.05, 0.95])
-                    with radio_col2:
-                        human_survey.radio(
-                            symptom,
-                            options=range(4),
-                            format_func=lambda x: response_options[x],
-                            horizontal=True,
-                            id=f"human-{symptom}",
-                        )
+
                     concordance = (
                         gpt_survey.data.get(f"gpt-{symptom}", {"value": 0})["value"]
                         == human_survey.data.get(f"human-{symptom}", {"value": 0})[
@@ -510,8 +514,14 @@ if sss["ready"] and sss["authenticated"]:
                     else:
                         radio_col1.write("")
 
-                        # if reason:
-                        #     st.caption("☘️")
+                    with radio_col2:
+                        human_survey.radio(
+                            symptom,
+                            options=range(4),
+                            format_func=lambda x: response_options[x],
+                            horizontal=True,
+                            id=f"human-{symptom}",
+                        )
 
         with rev_col1:
             value_list = get_value_list(
@@ -590,3 +600,5 @@ st.markdown(
             """,
     unsafe_allow_html=True,
 )
+
+# st.write([k for k in sss.keys()])
