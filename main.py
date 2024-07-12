@@ -216,17 +216,23 @@ def load_data(filepath: str) -> pd.DataFrame:
     return pd.read_excel(filepath, sheet_name="Sheet1")
 
 
-@st.cache_resource
+@st.cache_data
 def produce_session_variables(GPT_output_filepath, case_directory, symptoms_json_path):
     df = load_data(GPT_output_filepath)
     IDs = get_unique_IDs(df)
     symptoms, reverse_symptoms, categories = prepare_symptoms(symptoms_json_path)
     cases = prepare_cases(case_directory, df, IDs)
+
     return (df, IDs, symptoms, reverse_symptoms, categories, cases)
+
+
+def obtain_status_list(username, IDs):
+    return get_status_list(username, IDs)
 
 
 def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
     # print("initializing")
+
     df, IDs, symptoms, reverse_symptoms, categories, cases = produce_session_variables(
         GPT_output_filepath, case_directory, symptoms_json_path
     )
@@ -242,7 +248,7 @@ def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
     # sss['flat_symptoms'] = functools.reduce(lambda x, y: x+y, list(sss['symptoms'].values()), [])
     sss["cases"] = cases
     sss["ready"] = True
-    sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
+    # end
 
 
 def submit_survey_data(which):
@@ -260,12 +266,17 @@ def submit_survey_data(which):
         }
         fill_survey("initial", "human")
         payload["evaluated"] = True
+        sss["status_list"].loc[
+            sss["status_list"]["ID"] == str(sss["current_ID"]), "초기평가"
+        ] = "🔵"
 
     elif which == "human":
         payload["reviewed"] = True
+        sss["status_list"].loc[
+            sss["status_list"]["ID"] == str(sss["current_ID"]), "재검토"
+        ] = "🔵"
 
     sss["doc_ref"].set(payload, merge=True)
-    sss["status_list"] = get_status_list(sss["username"], sss["IDs"])
 
     messagebox = st.success("Data succesfully submitted")  # Display the alert
     sleep(1)
@@ -325,6 +336,8 @@ with st.sidebar:
         st.subheader(f"{today}에 입장하셨습니다.")
         # st.checkbox("아직 판독하지 않은 사례들만 표시", False, key='only_unevaluated', on_change=set_unevaluated_IDs)
         authenticator.logout("Logout", "main")
+        if sss["status_list"] is None:
+            sss["status_list"] = obtain_status_list(sss["username"], sss["IDs"])
         st.markdown("Status List")
         st.dataframe(sss["status_list"])
 
@@ -577,6 +590,3 @@ st.markdown(
             """,
     unsafe_allow_html=True,
 )
-
-# st.write(sss["__streamlit-survey-component_human_human-paranoid_delusion"])
-st.write(sss["human_survey_data"])
