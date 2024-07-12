@@ -225,7 +225,6 @@ def produce_session_variables(GPT_output_filepath, case_directory, symptoms_json
     return (df, IDs, symptoms, reverse_symptoms, categories, cases)
 
 
-@st.cache_data
 def initialize_main(GPT_output_filepath, case_directory, symptoms_json_path):
     # print("initializing")
     df, IDs, symptoms, reverse_symptoms, categories, cases = produce_session_variables(
